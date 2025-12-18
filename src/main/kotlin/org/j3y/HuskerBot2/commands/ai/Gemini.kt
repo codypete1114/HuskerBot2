@@ -91,15 +91,28 @@ class Gemini(
     }
 
     private fun chunkString(text: String, chunkSize: Int): List<String> {
+		// Fuzzy string chunker. Chunk strings, but try not to cuttoff words/sentences.
         if (text.isEmpty() || chunkSize <= 0) return listOf("")
-        val chunks = mutableListOf<String>()
-        var i = 0
-        val len = text.length
-        while (i < len) {
-            val end = (i + chunkSize).coerceAtMost(len)
-            chunks.add(text.substring(i, end))
-            i = end
-        }
-        return chunks
+
+		val chunks = mutableListOf<String>()
+		var start = 0
+		val len = text.length
+
+		while (start < len) {
+			var end = (start + chunkSize).coerceAtMost(len)
+
+			// If we're mid-word, try to backtrack to whitespace
+			if (end < len && !text[end].isWhitespace()) {
+				val lastSpace = text.lastIndexOf(' ', end - 1)
+				if (lastSpace > start) {
+					end = lastSpace
+				}
+			}
+
+			chunks.add(text.substring(start, end).trim())
+			start = end
+		}
+
+		return chunks
     }
 }
